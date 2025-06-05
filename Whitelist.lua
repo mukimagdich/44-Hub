@@ -1,9 +1,8 @@
--- SERVICES
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- FUNKTION ZUR HWID-ERMITTLUNG
+-- Funktion zur HWID-Ermittlung
 local function getHWID()
     if syn and syn.gethwid then
         return "syn_" .. syn.gethwid()
@@ -18,43 +17,16 @@ end
 
 local hwid = getHWID()
 
--- WHITELIST JSON URL (Pastebin RAW oder GitHub RAW)
-local whitelistURL = "https://pastebin.com/raw/DEIN_CODE" -- <- Ersetze durch deinen Link
+-- Whitelist-URL
+local whitelistURL = "https://raw.githubusercontent.com/DEIN_USERNAME/44-hub/main/whitelist.json"
 
--- WHITELIST PRÜFUNG
 local success, result = pcall(function()
     return HttpService:JSONDecode(game:HttpGet(whitelistURL))
 end)
 
 if not success or not result[hwid] then
     warn("Zugriff verweigert. HWID: " .. hwid)
-
-    -- DISCORD MELDUNG
-    local webhook = "https://discord.com/api/webhooks/DEIN_WEBHOOK"
-    local data = {
-        ["content"] = "**Nicht Whitelist User**",
-        ["embeds"] = {{
-            ["title"] = "Zugriffsversuch geblockt",
-            ["fields"] = {
-                {["name"] = "Name", ["value"] = player.Name},
-                {["name"] = "UserId", ["value"] = tostring(player.UserId)},
-                {["name"] = "HWID", ["value"] = hwid}
-            },
-            ["color"] = 16711680
-        }}
-    }
-
-    pcall(function()
-        HttpService:PostAsync(webhook, HttpService:JSONEncode(data), Enum.HttpContentType.ApplicationJson)
-    end)
-
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Whitelist",
-        Text = "Nicht autorisiert.",
-        Duration = 6
-    })
-
-    return -- Script beenden
+    return
 end
 
-print("Whitelist-Zugriff erlaubt für " .. player.Name)
+print("Zugriff erlaubt für " .. player.Name)
