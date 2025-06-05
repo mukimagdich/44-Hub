@@ -1,0 +1,126 @@
+-- SERVICES
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- REMOTE EVENT
+local muscleEvent = player:WaitForChild("muscleEvent")
+local interactSeat = workspace:WaitForChild("machinesFolder"):WaitForChild("Jungle Bar Lift"):WaitForChild("interactSeat")
+
+-- UI LIBRARY LADEN
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/obeseinsect/roblox/main/Ui%20Libraries/Elerium.lua"))()
+
+-- FENSTER
+local Window = library:AddWindow("44 Hub", {
+    main_color = Color3.fromRGB(100, 100, 255),
+    min_size = Vector2.new(400, 400),
+    toggle_key = Enum.KeyCode.RightShift,
+    can_resize = true,
+})
+
+-- TABS
+local mainTab = Window:AddTab("Main")
+local killTab = Window:AddTab("Auto Kill")
+local rebirthTab = Window:AddTab("Rebirth")
+
+-- AUTO MUSCLE
+local autoMuscleEnabled = false
+mainTab:AddSwitch("Auto Lift", function(state)
+    autoMuscleEnabled = state
+end)
+
+-- AUTO KILL 1
+local autoKillEnabled = false
+killTab:AddSwitch("Auto Kill", function(state)
+    autoKillEnabled = state
+end)
+
+-- AUTO KILL 2
+local autoKill2Enabled = false
+killTab:AddSwitch("Auto Kill 2", function(state)
+    autoKill2Enabled = state
+end)
+
+-- AUTO REBIRTH
+local autoRebirthEnabled = false
+rebirthTab:AddSwitch("Auto Rebirth", function(state)
+    autoRebirthEnabled = state
+end)
+
+-- TOOL VERWENDEN
+local function useTool()
+    local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+    if tool and tool:FindFirstChild("RemoteEvent") then
+        tool.RemoteEvent:FireServer()
+    elseif tool then
+        tool:Activate()
+    end
+end
+
+-- AUTO KILL 1 LOGIK
+RunService.RenderStepped:Connect(function()
+    if not autoKillEnabled then return end
+
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    local hrp = character.HumanoidRootPart
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local db = plr.Character:FindFirstChild("DamageBox") or plr.Character:FindFirstChild("RightHand")
+            if db and db:IsA("BasePart") then
+                db.CFrame = hrp.CFrame * CFrame.new(0, 0, -2)
+            end
+        end
+    end
+end)
+
+-- AUTO KILL 2 LOGIK
+RunService.RenderStepped:Connect(function()
+    if not autoKill2Enabled then return end
+
+    local character = player.Character
+    if not character then return end
+
+    local myHitbox = character:FindFirstChild("RightHand") or character:FindFirstChild("DamageBox")
+    if not myHitbox then return end
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local targetBox = plr.Character:FindFirstChild("DamageBox") or plr.Character:FindFirstChild("HumanoidRootPart")
+            if targetBox and targetBox:IsA("BasePart") then
+                myHitbox.CFrame = targetBox.CFrame * CFrame.new(0, 0, -1)
+                useTool()
+                task.wait(0.05)
+            end
+        end
+    end
+end)
+
+-- AUTO MUSCLE LOGIK
+task.spawn(function()
+    while true do
+        if autoMuscleEnabled then
+            pcall(function()
+                muscleEvent:FireServer("rep", interactSeat)
+            end)
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- AUTO REBIRTH LOGIK
+task.spawn(function()
+    while true do
+        if autoRebirthEnabled then
+            pcall(function()
+                ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            end)
+            task.wait(0.3)
+        end
+        task.wait(0.1)
+    end
+end)
