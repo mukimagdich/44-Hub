@@ -42,12 +42,12 @@ task.spawn(function()
     end
 end)
 
--- == FAST TRAIN (800 Loops, EIN Switch im FarmingTab) ==
+-- == FAST TRAIN (600 Loops, EIN Switch im FarmingTab) ==
 local fastTrainEnabled = false
 farmingTab:AddSwitch("Fast Train", function(state)
     fastTrainEnabled = state
 end)
-for i = 1, 800 do
+for i = 1, 600 do
     task.spawn(function()
         while true do
             if fastTrainEnabled then
