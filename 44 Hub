@@ -254,10 +254,8 @@ task.spawn(function()
     end
 end)
 local fastTrainEnabled = false
-local farmingTab = Window:AddTab("Farming")
-farmingTab:AddSwitch("Fast Train (800 Loops)", function(state)
+farmingTab:AddSwitch("Fast Train", function(state)
     fastTrainEnabled = state
-    print("Fast Train:", state)
 end)
 for i = 1, 800 do
     task.spawn(function()
@@ -267,7 +265,7 @@ for i = 1, 800 do
                     muscleEvent:FireServer("rep", interactSeat)
                 end)
             end
-            task.wait() -- superkurze Pause, sonst bricht Roblox evtl. ab
+            task.wait()  -- ganz kurze Pause, damit Roblox nicht zu sehr laggt
         end
     end)
 end
