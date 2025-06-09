@@ -1,17 +1,18 @@
--- SERVICES
+-- == SERVICES UND GRUNDVARIABLEN ==
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- REMOTE EVENT
+-- == REMOTES/PARTS HOLEN ==
 local muscleEvent = player:WaitForChild("muscleEvent")
 local interactSeat = workspace:WaitForChild("machinesFolder"):WaitForChild("Jungle Bar Lift"):WaitForChild("interactSeat")
--- UI LIBRARY LADEN
+
+-- == Elerium-GUI LADEN ==
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/obeseinsect/roblox/main/Ui%20Libraries/Elerium.lua"))()
 
--- FENSTER
+-- == GUI-FENSTER ==
 local Window = library:AddWindow("44 Hub", {
     main_color = Color3.fromRGB(100, 100, 255),
     min_size = Vector2.new(400, 400),
@@ -19,54 +20,56 @@ local Window = library:AddWindow("44 Hub", {
     can_resize = true,
 })
 
--- TABS
+-- == TABS ==
 local mainTab = Window:AddTab("Main")
 local killTab = Window:AddTab("Auto Kill")
 local rebirthTab = Window:AddTab("Rebirth")
+local farmingTab = Window:AddTab("Farming")
 
--- AUTO MUSCLE
+-- == AUTO MUSCLE (Auto Lift) ==
 local autoMuscleEnabled = false
 mainTab:AddSwitch("Auto Lift", function(state)
     autoMuscleEnabled = state
 end)
+task.spawn(function()
+    while true do
+        if autoMuscleEnabled then
+            pcall(function()
+                muscleEvent:FireServer("rep", interactSeat)
+            end)
+        end
+        task.wait(0.1)
+    end
+end)
 
--- AUTO KILL 1
+-- == FAST TRAIN (800 Loops, EIN Switch im FarmingTab) ==
+local fastTrainEnabled = false
+farmingTab:AddSwitch("Fast Train", function(state)
+    fastTrainEnabled = state
+end)
+for i = 1, 800 do
+    task.spawn(function()
+        while true do
+            if fastTrainEnabled then
+                pcall(function()
+                    muscleEvent:FireServer("rep", interactSeat)
+                end)
+            end
+            task.wait()
+        end
+    end)
+end
+
+-- == AUTO KILL 1 ==
 local autoKillEnabled = false
 killTab:AddSwitch("Auto Kill", function(state)
     autoKillEnabled = state
 end)
-
--- AUTO KILL 2
-local autoKill2Enabled = false
-killTab:AddSwitch("Auto Kill 2", function(state)
-    autoKill2Enabled = state
-end)
-
--- AUTO REBIRTH
-local autoRebirthEnabled = false
-rebirthTab:AddSwitch("Auto Rebirth", function(state)
-    autoRebirthEnabled = state
-end)
-
--- TOOL VERWENDEN
-local function useTool()
-    local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-    if tool and tool:FindFirstChild("RemoteEvent") then
-        tool.RemoteEvent:FireServer()
-    elseif tool then
-        tool:Activate()
-    end
-end
-
--- AUTO KILL 1 LOGIK
 RunService.RenderStepped:Connect(function()
     if not autoKillEnabled then return end
-
     local character = player.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-
     local hrp = character.HumanoidRootPart
-
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
             local db = plr.Character:FindFirstChild("DamageBox") or plr.Character:FindFirstChild("RightHand")
@@ -77,16 +80,25 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- AUTO KILL 2 LOGIK
+-- == AUTO KILL 2 ==
+local autoKill2Enabled = false
+killTab:AddSwitch("Auto Kill 2", function(state)
+    autoKill2Enabled = state
+end)
+local function useTool()
+    local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+    if tool and tool:FindFirstChild("RemoteEvent") then
+        tool.RemoteEvent:FireServer()
+    elseif tool then
+        tool:Activate()
+    end
+end
 RunService.RenderStepped:Connect(function()
     if not autoKill2Enabled then return end
-
     local character = player.Character
     if not character then return end
-
     local myHitbox = character:FindFirstChild("RightHand") or character:FindFirstChild("DamageBox")
     if not myHitbox then return end
-
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
             local targetBox = plr.Character:FindFirstChild("DamageBox") or plr.Character:FindFirstChild("HumanoidRootPart")
@@ -99,19 +111,11 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- AUTO MUSCLE LOGIK
-task.spawn(function()
-    while true do
-        if autoMuscleEnabled then
-            pcall(function()
-                muscleEvent:FireServer("rep", interactSeat)
-            end)
-        end
-        task.wait(0.1)
-    end
+-- == AUTO REBIRTH ==
+local autoRebirthEnabled = false
+rebirthTab:AddSwitch("Auto Rebirth", function(state)
+    autoRebirthEnabled = state
 end)
-
--- AUTO REBIRTH LOGIK
 task.spawn(function()
     while true do
         if autoRebirthEnabled then
@@ -123,38 +127,51 @@ task.spawn(function()
         task.wait(0.1)
     end
 end)
+
+-- == AUTO KING (Position Lock zu fester King-Position) ==
+local autoKingEnabled = false
+local kingPosition = Vector3.new(-8739.369140625, 23.401443481445312, -5846.9326171875)
+rebirthTab:AddSwitch("Auto King", function(state)
+    autoKingEnabled = state
+end)
+task.spawn(function()
+    while true do
+        if autoKingEnabled then
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = CFrame.new(kingPosition)
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- == ANTI AFK ==
 local antiAFKEnabled = false
 mainTab:AddSwitch("Anti AFK", function(state)
     antiAFKEnabled = state
-    print("Anti AFK:", state)
 end)
 task.spawn(function()
     local vu = game:GetService("VirtualUser")
-    game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    player.Idled:Connect(function()
         if antiAFKEnabled then
             vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
             task.wait(1)
             vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            print("Anti AFK Ping gesendet!")
         end
     end)
 end)
+
+-- == POSITION LOCK (Main Tab) ==
 local posLockEnabled = false
 local lockedPosition = nil
 mainTab:AddSwitch("Position Lock", function(state)
     posLockEnabled = state
     if state then
-        -- Speichere aktuelle Position beim Einschalten
         local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             lockedPosition = char.HumanoidRootPart.Position
-            print("Position gelockt bei:", lockedPosition)
-        else
-            print("Charakter nicht gefunden!")
-            posLockEnabled = false
         end
-    else
-        print("Position Lock AUS!")
     end
 end)
 task.spawn(function()
@@ -168,104 +185,3 @@ task.spawn(function()
         task.wait(0.1)
     end
 end)
-
-local flyEnabled = false
-local flySpeed = 3
-
-mainTab:AddSwitch("Fly", function(state)
-    flyEnabled = state
-    print("Fly ist jetzt:", state)
-end)
-
-mainTab:AddTextBox("Fly Speed", function(val)
-    local num = tonumber(val)
-    if num and num > 0 then
-        flySpeed = num
-        print("FlySpeed gesetzt auf:", flySpeed)
-    else
-        print("Bitte eine gültige Zahl größer 0 eingeben!")
-    end
-end, {
-    clearonfocus = false,
-    text = tostring(flySpeed)
-})
-
-task.spawn(function()
-    local UIS = game:GetService("UserInputService")
-    while true do
-        if flyEnabled then
-            local char = player.Character
-            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
-                char.Humanoid.PlatformStand = true
-                local move = Vector3.new(0,0,0)
-
-                -- === PC: WASD in Kamerarichtung (inkl. hoch/runter!) ===
-                if UIS:IsKeyDown(Enum.KeyCode.W) then
-                    move = move + workspace.CurrentCamera.CFrame.LookVector * flySpeed
-                end
-                if UIS:IsKeyDown(Enum.KeyCode.S) then
-                    move = move - workspace.CurrentCamera.CFrame.LookVector * flySpeed
-                end
-                if UIS:IsKeyDown(Enum.KeyCode.A) then
-                    move = move - workspace.CurrentCamera.CFrame.RightVector * flySpeed
-                end
-                if UIS:IsKeyDown(Enum.KeyCode.D) then
-                    move = move + workspace.CurrentCamera.CFrame.RightVector * flySpeed
-                end
-
-                -- === Handy: Joystick bewegt dich in Blickrichtung ===
-                local moveDir = char.Humanoid.MoveDirection
-                if moveDir.Magnitude > 0 then
-                    move = workspace.CurrentCamera.CFrame.LookVector * moveDir.Magnitude * flySpeed
-                end
-
-                -- === Kein Input? Einfach in der Luft schweben! ===
-                char.HumanoidRootPart.Velocity = move
-            end
-        else
-            -- Deaktiviere Fly sauber, damit du wieder normal bist:
-            local char = player.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.PlatformStand = false
-            end
-        end
-        task.wait(0.02)
-    end
-end)
-local autoKingEnabled = false
-local kingPosition = Vector3.new(-8739.369140625, 23.401443481445312, -5846.9326171875)
-rebirthTab:AddSwitch("Auto King", function(state)
-    autoKingEnabled = state
-    if state then
-        print("Auto King AN!")
-    else
-        print("Auto King AUS!")
-    end
-end)
-task.spawn(function()
-    while true do
-        if autoKingEnabled then
-            local char = player.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = CFrame.new(kingPosition)
-            end
-        end
-        task.wait(0.1)
-    end
-end)
-local fastTrainEnabled = false
-farmingTab:AddSwitch("Fast Train", function(state)
-    fastTrainEnabled = state
-end)
-for i = 1, 800 do
-    task.spawn(function()
-        while true do
-            if fastTrainEnabled then
-                pcall(function()
-                    muscleEvent:FireServer("rep", interactSeat)
-                end)
-            end
-            task.wait()  -- ganz kurze Pause, damit Roblox nicht zu sehr laggt
-        end
-    end)
-end
